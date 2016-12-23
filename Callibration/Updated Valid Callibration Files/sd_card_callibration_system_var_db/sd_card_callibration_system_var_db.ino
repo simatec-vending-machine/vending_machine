@@ -91,7 +91,7 @@ void setup() {
       db.create(0, TABLE_SIZE, (unsigned int)sizeof(logEvent));
       Serial.println("DONE");
     } 
-
+    deleteAll();
     createMasterRecord();
     showAll();
 
