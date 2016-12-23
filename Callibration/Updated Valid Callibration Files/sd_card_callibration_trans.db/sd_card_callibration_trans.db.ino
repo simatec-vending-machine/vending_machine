@@ -73,7 +73,7 @@ pinMode(13, OUTPUT);
   digitalWrite(13, LOW);
 
   Serial.begin(9600);
-  Serial.println(" Attempt to Read from one DB And write to the other ");
+  Serial.println("Creation of Trans DB And write from Sys Var DB ");
   Serial.println();
 
   randomSeed(analogRead(0));

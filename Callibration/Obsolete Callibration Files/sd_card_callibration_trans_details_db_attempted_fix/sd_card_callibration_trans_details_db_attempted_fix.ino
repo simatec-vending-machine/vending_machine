@@ -7,8 +7,18 @@
 #define SD_PIN 4
 #define TABLE_SIZE 3686793216
 
+char* trans_db = "/db/trans_db.db";
 char* trans_details_db = "/db/tran_det.db";
 File dbFile;
+
+struct LogEventRead{
+  int id;
+  char trans_no[11];
+  char timestamp[6];
+  char datestamp[11];
+}
+logEventRead;
+
 
 struct LogEventWrite{
   int id;
@@ -18,13 +28,17 @@ struct LogEventWrite{
 }
 logEventWrite;
 
-struct LogEventRead{
+struct LogEventtransno{
   int id;
   char trans_no[11];
-  char timestamp[6];
-  char datestamp[11];
+  int amount;
+  char phone_number[11];
+  float liquid_price;
+  float liquid_amount;
+  bool delivered;
 }
-logEventRead;
+logEventtransno;
+
 
 int default_id = 1;
 char default_trans_no[11] = "AAAAAAAAAA" ;
@@ -47,13 +61,13 @@ byte reader(unsigned long address){
 }
 EDB db(&writer, &reader);
 
-void setup() {
-  // put your setup code here, to run once:
+void setup()
+{
   pinMode(13, OUTPUT);
   digitalWrite(13, LOW);
 
   Serial.begin(9600);
-  Serial.println(" Extended Database Library + External SD Card Storage Demo ");
+  Serial.println("Creation of Transaction Details Database ");
   Serial.println();
 
   randomSeed(analogRead(0));
@@ -63,9 +77,53 @@ void setup() {
     return;
   }
   if (!SD.exists("/db")){
-    Serial.println("Dir for db files does not exist, creating...");
+    Serial.println("Error: Transaction Database Does not Exist...");
     SD.mkdir("/db");
   }
+
+  if (SD.exists(trans_db)){
+    dbFile = SD.open(trans_db, FILE_WRITE);
+
+    if (!dbFile){
+      Serial.println("Error: Transaction Database Does not Exist...");
+      return;
+    }
+    if (dbFile){
+      Serial.print("Opening current table... ");
+      EDB_Status result = db.open(0);
+      if (result == EDB_OK){
+        Serial.println("DONE");
+    }else {
+        Serial.println("ERROR");
+        Serial.println("Did not find database in the file " + String(trans_details_db));
+        return;
+      }
+    }else {
+            Serial.println("Could not open file " + String(trans_details_db));
+            return;
+        } 
+    }else {
+      Serial.println("Error: Transaction Database Does not Exist...");
+      return;
+    }
+
+//-------------------------------------------------------------------------------
+//   Read function of transaction number
+//---------------------------------------------------------------------------------
+
+Serial.println("Reading Transaction No: ");
+
+EDB_Status result = db.readRec(1, EDB_REC logEventtransno);
+if (result == EDB_OK)
+  {
+    memcpy(default_trans_no,logEventtransno.trans_no, 11);      
+  }
+Serial.print("Transaction No: ");
+Serial.println(default_trans_no);
+
+//----------------------------------------------------------------------------------
+//    Initialization of trans_details_db
+//----------------------------------------------------------------------------------
 
   if (SD.exists(trans_details_db)){
     dbFile = SD.open(trans_details_db, FILE_WRITE);
@@ -82,7 +140,7 @@ void setup() {
         Serial.println("ERROR");
         Serial.println("Did not find database in the file " + String(trans_details_db));
         Serial.print("Creating new table... ");
-        db.create(0, TABLE_SIZE, (unsigned int)sizeof(logEventRead)+(unsigned int)sizeof(logEventWrite));
+        db.create(0, TABLE_SIZE, (unsigned int)sizeof(logEventWrite));
         Serial.println("DONE");
         return;
       }
@@ -93,34 +151,27 @@ void setup() {
     }else {
       Serial.print("Creating table... ");
       dbFile = SD.open(trans_details_db, FILE_WRITE);
-      db.create(0, TABLE_SIZE, (unsigned int)sizeof(logEventRead)+(unsigned int)sizeof(logEventWrite));
+      db.create(0, TABLE_SIZE, (unsigned int)sizeof(logEventWrite));
       Serial.println("DONE");
     }
 
-   deleteAll();
-   createRecord();
-   showAll();
+    deleteAll();
+    createRecord();
+    showAll();
 
+
+    
 }
 
-void loop() {
-  // put your main code here, to run repeatedly:
-
-}
-void countRecords()
+void loop()
 {
-    Serial.print("Record Count: ");
-    Serial.println(db.count());
+  
 }
-void recordLimit()
-{
-  Serial.print("Record Limit: ");
-  Serial.println(db.limit());
-}
+
 void createRecord()
 {
   Serial.print("Creating master record on database.. ");
-  logEventWrite.id = default_id;
+  logEventWrite.id = 1;
   memcpy(logEventWrite.trans_no,default_trans_no,10);
   memcpy(logEventWrite.timestamp,default_timestamp,5);
   memcpy(logEventWrite.datestamp,default_datestamp,10);
@@ -191,4 +242,16 @@ void printError(EDB_Status err)
             break;
     }
 }
+
+void countRecords()
+{
+    Serial.print("Record Count: ");
+    Serial.println(db.count());
+}
+void recordLimit()
+{
+  Serial.print("Record Limit: ");
+  Serial.println(db.limit());
+}
+
 
