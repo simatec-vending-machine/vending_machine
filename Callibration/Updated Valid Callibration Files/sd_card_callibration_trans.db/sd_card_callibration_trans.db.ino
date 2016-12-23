@@ -104,7 +104,7 @@ void setup() {
       db.create(0, TABLE_SIZE, (unsigned int)sizeof(logEventWrite));
       Serial.println("DONE");
     }
-
+    deleteAll();
     createRecord();
     showAll();
 }
@@ -112,6 +112,13 @@ void setup() {
 void loop() {
   // put your main code here, to run repeatedly:
 
+}
+
+void deleteAll()
+{
+    Serial.print("Truncating table... ");
+    db.clear();
+    Serial.println("DONE");
 }
 void countRecords()
 {
@@ -143,7 +150,7 @@ float get_liquid_price()
 void createRecord()
 {
   Serial.print("Creating New record on database.. ");
-  logEventWrite.id = db.count()+1;
+  logEventWrite.id = 1;
   memcpy(logEventWrite.trans_no,default_trans_no,10);
   logEventWrite.amount = default_amount;
   logEventWrite.liquid_price = get_liquid_price();
