@@ -343,6 +343,26 @@ NexPage pass_changed = NexPage(15, 0, "pass_changed");
   //NexText text_time_15 = NexText(15, 6, "text_time_15");
   //NexText text_status_15 = NexText(15, 7, "text_status_15");
 
+NexPage manual = NexPage(16,0, "manual");
+  NexButton bn_con_manual = NexButton(16,0, "bn_con_manual");
+  NexText text_amount_16 = NexText(16, 3, "text_amount_16");
+  
+  //Keypad
+  NexButton bn_manual_1 = NexButton(16, 7, "bn_manual_1");
+  NexButton bn_manual_2 = NexButton(16, 8, "bn_manual_2");
+  NexButton bn_manual_3 = NexButton(16, 9, "bn_manual_3");
+  NexButton bn_manual_4 = NexButton(16, 10, "bn_manual_4");
+  NexButton bn_manual_5 = NexButton(16, 11, "bn_manual_5");
+  NexButton bn_manual_6 = NexButton(16, 12, "bn_manual_6");
+  NexButton bn_manual_7 = NexButton(16, 13, "bn_manual_7");
+  NexButton bn_manual_8 = NexButton(16, 14, "bn_manual_8");
+  NexButton bn_manual_9 = NexButton(16, 15, "bn_manual_9");
+  NexButton bn_manual_0 = NexButton(16, 16, "bn_manual_0");
+  NexButton bn_manual_ok = NexButton(16, 17, "bn_manual_ok");
+  NexButton bn_manual_cl = NexButton(16, 18, "bn_manual_cl");
+
+
+
 //Variable Initialisations
 char system_date[] = "01-09-2016";
 char system_time[] = "06:04";
@@ -447,7 +467,7 @@ bool text_phone_no_keypad_state = false;
 bool text_amount_keypad_state = false;
 bool text_user_id_5_keypad_state = false;
 bool text_pass_5_keypad_state = false;
-
+bool text_amount_16_keypad_state = false;
 char buffer_phone_no[10] = {0};
 char buffer_amount[10] = {0};
 
@@ -704,6 +724,24 @@ NexTouch *nex_listen_list[] =
 //    &text_date_15,
 //    &text_time_15,
 //    &text_status_15,
+
+  &manual,
+      &bn_con_manual,
+      &text_amount_16,
+
+      &bn_manual_1,
+      &bn_manual_2,
+      &bn_manual_3,
+      &bn_manual_4,
+      &bn_manual_5,
+      &bn_manual_6,
+      &bn_manual_7,
+      &bn_manual_8,
+      &bn_manual_9,
+      &bn_manual_0,
+      &bn_manual_ok,
+      &bn_manual_cl,
+      
     NULL
 };
 //General Functions
@@ -844,17 +882,7 @@ void bn_admin_loginPopCallback(void *ptr)
   text_phone_no_keypad_hide();
 }
 */
-void text_phone_noPopCallback(void *ptr)
-{
-  if (text_phone_no_keypad_state == false)
-  {
-    text_phone_no_keypad_show();
-  }
-  else
-  {
-    text_phone_no_keypad_hide();
-  }
-}
+
 void text_phone_no_keypad_show()
 {
   sendCommand("vis 255,0");
@@ -892,6 +920,17 @@ void text_phone_no_keypad_hide()
   sendCommand("vis text_status_2,1");
 
   text_phone_no_keypad_state = false;
+}
+void text_phone_noPopCallback(void *ptr)
+{
+  if (text_phone_no_keypad_state == false)
+  {
+    text_phone_no_keypad_show();
+  }
+  else
+  {
+    text_phone_no_keypad_hide();
+  }
 }
 
 void text_amount_2PopCallback(void *ptr)
@@ -1271,6 +1310,58 @@ void bn_accessPopCallback(void *ptr)
   //update_system_requirements();
 }
 */
+
+void text_amount_16_keypad_show()
+{
+  sendCommand("vis 255,0");
+  sendCommand("vis bn_home_16,1");
+  sendCommand("vis text_amount_16,1");
+  sendCommand("vis text_date_16,1");
+  sendCommand("vis text_time_16,1");
+  sendCommand("vis text_status_16,1");
+  sendCommand("vis bn_manual_1,1");
+  sendCommand("vis bn_manual_2,1");
+  sendCommand("vis bn_manual_3,1");
+  sendCommand("vis bn_manual_4,1");
+  sendCommand("vis bn_manual_5,1");
+  sendCommand("vis bn_manual_6,1");
+  sendCommand("vis bn_manual_7,1");
+  sendCommand("vis bn_manual_8,1");
+  sendCommand("vis bn_manual_9,1");
+  sendCommand("vis bn_manual_0,1");
+  sendCommand("vis bn_manual_ok,1");
+  sendCommand("vis bn_manual_cl,1");
+  
+  text_amount_16_keypad_state = true;
+}
+
+void text_amount_16_keypad_hide()
+{
+  sendCommand("vis 255,0");
+  
+  sendCommand("vis bn_home_16,1");
+  sendCommand("vis text_amount_16,1");
+  sendCommand("vis bn_con_manual,1");
+  
+  sendCommand("vis text_date_16,1");
+  sendCommand("vis text_time_16,1");
+  sendCommand("vis text_status_16,1");
+    
+  text_amount_16_keypad_state = false;
+}
+void text_amount_16PopCallback(void *ptr)
+{
+  if (text_amount_16_keypad_state == false)
+  {
+    text_amount_16_keypad_show();
+  }
+  else
+  {
+    text_amount_16_keypad_hide();
+  }
+}
+
+
 
 void bn_adjdatetimePopCallback(void *ptr)
 {
