@@ -16,7 +16,7 @@ char current_phone[11];
 char current_digit;
 
 //set of variables used to locate and find the transaction number
-int transaction_index=50;
+int transaction_index=60;
 int end_of_trans=0;
 bool gotthetrans=false;
 
@@ -57,13 +57,14 @@ void loop(){
   //Serial.print("Phone no: ");
   //Serial.println(phone_no);
   
-if(phone_no=="w405543514")
+if(phone_no=="+254702034103")
 {
     Serial.println(text);
     Serial.print("Phone no: ");
     Serial.println(phone_no);
 
     //Start manipulation of SMS Message
+    //quick_read();
     clear_details();
     get_trans_no();
     get_date();
@@ -86,7 +87,8 @@ else if (phone_no.length()<1)
 else
 {
     Serial.println("Not an MPESA Message. Don't bother");
-
+    Serial.print("Phone no: ");
+    Serial.println(phone_no);
     Serial.println(" ");
     Serial.println(" ");
 }
@@ -105,7 +107,7 @@ void get_trans_no()
  
     while (gotthetrans==false)
     {
-          
+     keep_checking:     
           current_digit = text.charAt(transaction_index);
           if (current_digit=='\"')
           {
@@ -124,6 +126,15 @@ void get_trans_no()
           
     }
     gotthetrans=false;
+    int j=transaction_index+3;
+    if ((text.charAt(j)=='/')||(text.charAt(j)==' ')||(text.charAt(j)=='+')||(text.charAt(j)=='\"')||(text.charAt(j-2)==','))
+    {
+      transaction_index++;
+      goto keep_checking;
+    }
+    else
+    {
+    }
     for (int i=transaction_index+3;i<transaction_index+13;i++)
         {
         current_trans_no[i-(transaction_index+3)] = text.charAt(i);
@@ -171,12 +182,19 @@ void get_date()
     gotthedate=false;
     for (int i=date_index+2;i<date_index+10;i++)
     {
-        current_date[i-(date_index+2)] = text.charAt(i);
-        if (text.charAt(i)==' ')
+      if (text.charAt(i)==' ')
         {
-          continue; 
+          current_date[i-(date_index+2)] = ' ';
+          current_date[i-(date_index+1)] = ' ';
+          goto D; 
+        }
+      else
+        {
+        current_date[i-(date_index+2)] = text.charAt(i);
         }
     }
+
+    D:
         Serial.print("Date: ");
         Serial.println(current_date);  
 
@@ -259,7 +277,14 @@ void get_amount()
     gottheamount=false;
     for (int i=amount_index+1;i<amount_index+5;i++)
     {
-        if (text.charAt(i)=='.')
+        if(text.charAt(i)==',')
+        {
+        current_amount[i-(amount_index+1)] = text.charAt(i+1);
+        current_amount[i-(amount_index)] = text.charAt(i+2);
+        current_amount[i-(amount_index-1)] = text.charAt(i+3);
+        goto B;
+        }
+        else if (text.charAt(i)=='.')
         {
          goto B;
         }
@@ -337,10 +362,20 @@ void get_phone_no()
       phone_index=end_of_amount;
 }
 
+void quick_read()
+{
+  String quick_read;
+  for (int i=0; i<25; i++)
+  {
+    quick_read=Sim800l.readSms(i);
+  }
+}
+
 void clear_details()
 {
    for( int i = 0; i < sizeof(current_amount);  ++i )
      current_amount[i] = (char)0; 
   
 }
+
 
