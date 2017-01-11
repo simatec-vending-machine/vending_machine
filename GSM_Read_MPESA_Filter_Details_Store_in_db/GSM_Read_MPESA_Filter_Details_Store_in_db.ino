@@ -1,6 +1,13 @@
 #include <Sim800l.h>
-#include <SoftwareSerial.h> //is necesary for the library!! 
-Sim800l Sim800l;  //to declare the library
+#include <SoftwareSerial.h> 
+#include <EDB.h>
+
+#include <SPI.h>
+#include <SD.h>
+
+#define SD_PIN 4
+#define TABLE_SIZE 3686793216
+Sim800l Sim800l;  
 String text;     // to storage the text of the sms
 int index = 1;   // to indicate the message to read.
 String phone_no;
@@ -14,6 +21,37 @@ int amount_int;
 char current_phone[11];
 
 char current_digit;
+
+//database initialization
+char* sys_var = "/db/sys_var.db";
+char* trans_db = "/db/trans_db.db";
+char* trans_details_db = "/db/tran_det.db";
+File dbFile;
+
+struct logEventgetsysvar{
+  int id;
+  char username[11];
+  char password[5];
+  float liquid_price;
+  bool delivered;
+}
+logEventgetsysvar;
+
+void writer(unsigned long address, byte data){
+  digitalWrite(13, HIGH);
+  dbFile.seek(address);
+  dbFile.write(data);
+  dbFile.flush();
+  digitalWrite(13, LOW);
+}
+byte reader(unsigned long address){
+  digitalWrite(13, HIGH);
+  dbFile.seek(address);
+  byte b = dbFile.read();
+  digitalWrite(13, LOW);
+  return b;
+}
+EDB db(&writer, &reader);
 
 //set of variables used to locate and find the transaction number
 int transaction_index=60;
@@ -40,23 +78,46 @@ int phone_index=0;
 int end_of_phone=0;
 bool gotthephone=false;
 
+//set of variables to store session database Values
+char session_username[11];
+char session_password[5];
+float session_liquid_price;
+
+bool already_run_var=false;
+
+
+
 
 void setup(){
-	Serial.begin(9600); // only for debug the results . 
-	Sim800l.begin(); // initializate the library. 
-  Serial.println("Initialization Complete");
-	  
+reinitialize:  
+Serial.begin(9600); // only for debug the results . 
+//SPI.begin();
+randomSeed(analogRead(0));
+
+//if (already_run_var==true)
+//{
+//  goto already_run;
+//}
+//else
+//{
+get_sys_var();  //  Initialization of System Variable Database for read of liquid price
+//already_run_var=true;
+//goto reinitialize;
+//}
+//already_run:
+Sim800l.begin(); // initialize the library. 
+Serial.println("Initialization Complete");
 }
 
 void loop(){
-	//do nothing
+  
   Serial.println("Starting to Read");
   text=Sim800l.readSms(index); 
   phone_no=Sim800l.getNumberSms(index);   
   //Serial.println(text);
   //Serial.print("Phone no: ");
   //Serial.println(phone_no);
-  
+    
 if((phone_no=="+254702034103")||(phone_no=="w405543514"))
 {
     Serial.println(text);
@@ -65,12 +126,9 @@ if((phone_no=="+254702034103")||(phone_no=="w405543514"))
 
     //Start manipulation of SMS Message
     //quick_read();
-    clear_details();
-    get_trans_no();
-    get_date();
-    get_time();
-    get_amount();
-    get_phone_no();
+    fetch_data();
+    
+    
 }
 
 else if (phone_no.length()<1)
@@ -377,5 +435,76 @@ void clear_details()
      current_amount[i] = (char)0; 
   
 }
+void fetch_data()
+{
+    clear_details();
+    get_trans_no();
+    get_date();
+    get_time();
+    get_amount();
+    get_phone_no();
+  
+}
+void get_sys_var()
+{
+  
+    if (!SD.begin(SD_PIN)){
+    Serial.println("No SD-card.");
+    return;
+  }
+ 
+  if (!SD.exists("/db")){
+    Serial.println("Error: System Variable Database Does not Exist...");
+    exit;
+  }
 
+  if (SD.exists(sys_var)){
+    dbFile = SD.open(sys_var, FILE_WRITE);
 
+    if (!dbFile){
+      Serial.println("Error: System Variable Database Does not Exist...");
+      exit;
+    }
+    if (dbFile){
+      Serial.print("Opening current table... ");
+      EDB_Status result = db.open(0);
+      if (result == EDB_OK){
+        Serial.println("DONE");
+    }else {
+        Serial.println("ERROR");
+        Serial.println("Did not find database in the file " + String(sys_var));
+        exit;
+        return;
+      }
+    }else {
+            Serial.println("Could not open file " + String(sys_var));
+            return;
+        } 
+    }else {
+      Serial.println("Error: System Variable Database Does not Exist...");
+      exit;
+    }
+//-------------------------------------------------------------------------------
+//   Read function of liquid price
+//---------------------------------------------------------------------------------
+
+Serial.println("Reading Liquid Price: ");
+
+EDB_Status result = db.readRec(1, EDB_REC logEventgetsysvar);
+if (result == EDB_OK)
+  {
+    memcpy(session_username, logEventgetsysvar.username, 11);
+    memcpy(session_password, logEventgetsysvar.password, 5);
+    session_liquid_price = logEventgetsysvar.liquid_price;      
+  }
+Serial.print("Username: ");
+Serial.println(session_username);
+
+Serial.print("Password: ");
+Serial.println(session_password);
+  
+Serial.print("Liquid Price: ");
+Serial.println(session_liquid_price);
+
+SD.end();
+}
